@@ -2,32 +2,40 @@ This is a [Plasmo extension](https://docs.plasmo.com/) project bootstrapped with
 
 ## Getting Started
 
-First, run the development server:
+1. Install `pnpm`:
+
+```bash
+curl -fsSL https://get.pnpm.io/install.sh | sh -
+```
+
+2. Install the JS dependencies:
+
+```bash
+pnpm install
+```
+
+3. Install the Python dependencies.
+
+```bash
+python3 -m virtualenv venv
+source venv/bin/activate
+python3 -m pip install -r requirements.txt
+```
+
+4. Create a `.env` file at the root of the repository. This should contain a `SENDGRID_API_KEY`.
+
+5. Run the development server for the extension:
 
 ```bash
 pnpm dev
-# or
-npm run dev
 ```
 
-Open your browser and load the appropriate development build. For example, if you are developing for the chrome browser, using manifest v3, use: `build/chrome-mv3-dev`.
-
-You can start editing the popup by modifying `popup.tsx`. It should auto-update as you make changes. To add an options page, simply add a `options.tsx` file to the root of the project, with a react component default exported. Likewise to add a content page, add a `content.ts` file to the root of the project, importing some module and do some logic, then reload the extension on your browser.
-
-For further guidance, [visit our Documentation](https://docs.plasmo.com/)
-
-## Making production build
-
-Run the following:
+6. Run the Python server (defaults to port 8000):
 
 ```bash
-pnpm build
-# or
-npm run build
+uvicorn server:app --reload
 ```
 
-This should create a production bundle for your extension, ready to be zipped and published to the stores.
+7. On your browser, go to `chrome://extensions`, enable "Developer Mode", and then press "Load Unpacked". Navigate to `build/chrome-mv3-dev` to finish loading the extension.
 
-## Submit to the webstores
-
-The easiest way to deploy your Plasmo extension is to use the built-in [bpp](https://bpp.browser.market) GitHub action. Prior to using this action however, make sure to build your extension and upload the first version to the store to establish the basic credentials. Then, simply follow [this setup instruction](https://docs.plasmo.com/workflows/submit) and you should be on your way for automated submission!
+8. Finally, navigate to https://labs.openai.com to see the extension.

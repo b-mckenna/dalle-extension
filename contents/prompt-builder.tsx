@@ -2,8 +2,15 @@ import backgroundPng from "data-base64:~assets/gradient.png"
 import backgroundImg from "data-base64:~assets/gradient.svg"
 import logo from "data-base64:~assets/logo_continual.svg"
 import cssText from "data-text:~styles.css"
-import type { PlasmoContentScript, PlasmoGetRootContainer } from "plasmo"
-import { ChangeEventHandler, useState } from "react"
+import type {
+  PlasmoContentScript,
+  PlasmoGetInlineAnchor,
+  PlasmoGetRootContainer,
+  PlasmoGetShadowHostId,
+  PlasmoMountShadowHost,
+  PlasmoRender,
+} from "plasmo"
+import { ChangeEventHandler, useEffect, useState } from "react"
 
 const waitForElement = (selector: string) => {
   return new Promise((resolve) => {
@@ -21,26 +28,32 @@ const waitForElement = (selector: string) => {
   })
 }
 
-export const getRootContainer: PlasmoGetRootContainer = async () => {
-  const container = document.createElement("div")
-  container.id = "plasmo-root-container"
+export const getShadowHostId: PlasmoGetShadowHostId = () =>
+  "plasmo-prompt-builder-root"
 
-  await waitForElement(".create-page")
-  const siblingNode = document.getElementsByClassName("create-page")[0]
-  const parentNode = siblingNode.parentNode
-  parentNode.insertBefore(container, siblingNode)
+export const getInlineAnchor: PlasmoGetInlineAnchor = () =>
+  document.querySelector(".create-page")
 
-  const historyNode = document.getElementsByClassName("create-page-header")
-  if (historyNode.length > 0) {
-    const node = historyNode[0]
-    node.className = `hidden`
+export const mountShadowHost: PlasmoMountShadowHost = ({
+  shadowHost,
+  inlineAnchor,
+  observer,
+}) => {
+  if (inlineAnchor) {
+    const parentNode = inlineAnchor.parentNode
+    parentNode.insertBefore(shadowHost, inlineAnchor)
+
+    const historyNode = document.getElementsByClassName("create-page-header")
+    if (historyNode.length > 0) {
+      const node = historyNode[0] as HTMLElement
+      node.style.display = "none"
+      node.classList.add("hidden")
+    }
   }
-
-  return container
 }
 
 export const config: PlasmoContentScript = {
-  matches: ["https://labs.openai.com/"],
+  matches: ["https://labs.openai.com/*"],
   css: ["../styles.css", "../style-override.css"],
 }
 
@@ -72,34 +85,50 @@ const PromptBuilder = () => {
   const [activity, setActivity] = useState("")
   const [descriptor, setDescriptor] = useState("")
 
+  useEffect(() => {
+    let builder: string[] = []
+    if (subject) {
+      builder.push(subject)
+    }
+    if (activity) {
+      builder.push(activity)
+    }
+    if (descriptor) {
+      builder.push(descriptor)
+    }
+
+    const generatedPrompt = builder.join(" ")
+    const nodes = document.getElementsByClassName("image-prompt-input")
+    if (nodes.length > 0) {
+      const node = nodes[0] as HTMLInputElement
+      if (node.value != generatedPrompt) {
+        node.value = generatedPrompt
+        node.dispatchEvent(new Event("input", { bubbles: true }))
+      }
+    }
+  }, [subject, activity, descriptor])
+
   const buildPromptSections: {
     title: string
-    tags: string[]
+    examples: string[]
     value: string
     onChange: ChangeEventHandler<HTMLInputElement>
   }[] = [
     {
       title: "Subject",
-      tags: ["characters", "animals", "places", "occupations", "objects"],
+      examples: ["dogs", "cats", "people", "cars"],
       value: subject,
       onChange: (e) => setSubject(e.target.value),
     },
     {
       title: "Activity",
-      tags: ["sports", "hobbies", "everyday", "labor"],
+      examples: ["playing in a park", "eating pizza", "building a rocket"],
       value: activity,
       onChange: (e) => setActivity(e.target.value),
     },
     {
       title: "Descriptor",
-      tags: [
-        "artistic style",
-        "environments",
-        "physical characteristics",
-        "artists",
-        "feelings",
-        "art medium",
-      ],
+      examples: ["impressionist", "vaporwave", "cyberpunk", "pop art"],
       value: descriptor,
       onChange: (e) => setDescriptor(e.target.value),
     },
@@ -123,14 +152,14 @@ const PromptBuilder = () => {
         }}
       />
 
-      <div className="flex-col py-8 w-full z-50">
+      <div className="flex-col py-8 w-full z-50 text-black font-sans">
         <div className="flex flex-col w-[1240px] mx-auto gap-8">
           <div className="flex w-full justify-between items-start">
             <div>
-              <h3 className="mt-0 font-bold">
+              <h1 className="mt-0 font-bold font-sans text-2xl mb-4">
                 Coalesce Sticker Bot — Get Your Custom DALL&middot;E 2 Sticker
-              </h3>
-              <p className="text-secondary">
+              </h1>
+              <p className="text-secondary font-sans text-gray-500">
                 DALL&middot;E is a product of OpenAI and is not affiliated with
                 Continual.
               </p>
@@ -139,16 +168,18 @@ const PromptBuilder = () => {
           </div>
 
           <section>
-            <h4>How It Works</h4>
+            <p className="text-lg mb-4">How It Works</p>
             <div className="flex justify-between gap-4">
               {howItWorksSections.map((section, idx) => (
-                <div className="flex justify-start gap-2 w-1/3">
+                <div
+                  key={section.title}
+                  className="flex justify-start gap-2 w-1/3">
                   <div className="p-4 rounded-full bg-white h-[24px] w-[24px] inline-flex items-center justify-center text-sm font-bold text-black">
                     {idx + 1}
                   </div>
-                  <div key={section.title} className="flex flex-col">
-                    <h5 className="font-semibold mb-2">{section.title}</h5>
-                    <p className="text-secondary">{section.description}</p>
+                  <div className="flex flex-col">
+                    <h5 className="mb-2 text-black">{section.title}</h5>
+                    <p className="text-gray-600">{section.description}</p>
                   </div>
                 </div>
               ))}
@@ -156,27 +187,21 @@ const PromptBuilder = () => {
           </section>
 
           <section>
-            <h4>Build Your Prompt</h4>
+            <p className="text-lg mb-4">Build Your Prompt</p>
             <div className="flex gap-4 justify-between">
               {buildPromptSections.map((section, idx) => (
                 <div
                   key={section.title}
                   className="inline-flex flex-col w-1/3 gap-2">
-                  <h5 className="font-semibold mb-2">{section.title}</h5>
+                  <h5 className="mb-2 text-black">{section.title}</h5>
                   <input
                     className="z-50 h-[40px] border border-[#ECECF1] w-full p-[16px]"
                     value={section.value}
                     onChange={section.onChange}
                   />
-                  <div className="flex flex-wrap gap-2">
-                    {section.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="text-secondary text-xs bg-white rounded-[99px] w-fit px-[8px] py-[4px]">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
+                  <span className="text-gray-600 text-sm">
+                    ex: {section.examples.join(", ")}
+                  </span>
                 </div>
               ))}
             </div>
