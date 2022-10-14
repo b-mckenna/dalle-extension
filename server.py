@@ -61,6 +61,27 @@ def generate_from_prompt(starting_text) -> str:
     response_list = []
     for x in response:
         resp = x["generated_text"].strip()
+        resp_tokens = resp.split()
+        resp_words = []
+        skip_next = False
+
+        for token in resp_tokens:
+            if skip_next is False:
+                if (
+                    token.find("-") == -1
+                    and token.find("—") == -1
+                    and token.find(":") == -1
+                ):
+                    resp_words.append(token)
+            else:
+                skip_next = False
+
+            if token.find("--w") != -1 or token.find("--h") != -1:
+                skip_next = True
+
+        resp_sentence = " ".join(resp_words)
+        resp = resp_sentence
+
         if (
             resp != starting_text
             and len(resp) > (len(starting_text) + 4)
