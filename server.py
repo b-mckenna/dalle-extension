@@ -5,6 +5,7 @@ from textwrap import dedent
 import traceback
 import uuid
 from typing import List, Tuple
+import urllib.parse
 
 import time
 from datetime import date, datetime
@@ -37,11 +38,10 @@ from sendgrid.helpers.mail import (
     ContentId,
 )
 
+dotenv.load_dotenv(".env")
 
 # create our client instance and pass it our key
 sg = sendgrid.SendGridAPIClient(os.environ.get("SENDGRID_API_KEY"))
-
-dotenv.load_dotenv(".env")
 
 gpt2_pipe = pipeline("text-generation", model="succinctly/text2image-prompt-generator")
 
@@ -103,16 +103,23 @@ def send_image_to_email(image_url: str, email: str):
     :returns API response code
     :raises Exception e: raises an exception"""
     # create our message object
+
+    tweet_link = "https://twitter.com/intent/tweet?text={}".format(
+        urllib.parse.quote_plus(
+            "Made with my #ContinualImagination and @OpenAI’s DALL-E 2 in the @continual_ai booth at #dbtCoalesce"
+        )
+    )
     message = Mail(
-        from_email="noreply@continual.ai",
+        from_email="Continual <hello@continual.ai>",
         to_emails=[email],
         subject="Your DALL-E 2 image is ready!",
         html_content=dedent(
-            """
+            f"""
             <p>Hey,</p>
             <p>Thanks for coming by the Continual booth at dbt Coalesce 2022!</p>
             <p>We've attached your generated image to this email. Enjoy!</p>
-            <p>Best,</p>
+            <p>Feel like sharing? <a href="{tweet_link}" target="_blank">Click</a> to Tweet your creation!</p>
+            <span>Best,</span>
             <p>the Continual team</p>
             """
         ),
@@ -382,6 +389,24 @@ def testprint():
         ]
         # images = images + [images[0]] * (BATCH_SIZE - len(images))
         do_print(images, mark_printed=False)
+    except Exception as e:
+        print("Error while printing:", e)
+        traceback.print_exc()
+
+
+@app.post("/testemail")
+def testemail():
+    try:
+        images = [
+            "https://cdn.openai.com/labs/images/A Shiba Inu dog wearing a beret and black turtleneck.webp?v=1",
+            "https://cdn.openai.com/labs/images/A comic book cover of a superhero wearing headphones.webp?v=1",
+            "https://cdn.openai.com/labs/images/A cat riding a motorcycle.webp?v=1",
+            "https://cdn.openai.com/labs/images/A photograph of a sunflower with sunglasses on in the middle of the flower in a field on a bright sunny day.webp?v=1",
+            "https://cdn.openai.com/labs/images/A handpalm with a tree growing on top of it.webp?v=1",
+            "https://cdn.openai.com/labs/images/An oil pastel drawing of an annoyed cat in a spaceship.webp?v=1",
+        ]
+        url = random.choice(images)
+        send_image_to_email(url, "sahil@continual.ai")
     except Exception as e:
         print("Error while printing:", e)
         traceback.print_exc()
