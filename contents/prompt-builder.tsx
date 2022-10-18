@@ -43,6 +43,20 @@ export const mountShadowHost: PlasmoMountShadowHost = ({
     const parentNode = inlineAnchor.parentNode
     parentNode.insertBefore(shadowHost, inlineAnchor)
 
+    const createPageNodes = document.getElementsByClassName("create-page")
+    if (createPageNodes.length > 0) {
+      const createPage = createPageNodes[0] as HTMLElement
+      createPage.style.paddingTop = "0px !important"
+    }
+
+    const createPageExamplesNodes = document.getElementsByClassName(
+      "create-page-examples",
+    )
+    if (createPageExamplesNodes.length > 0) {
+      const createPageExample = createPageExamplesNodes[0] as HTMLElement
+      createPageExample.style.paddingTop = "40px !important"
+    }
+
     const historyNode = document.getElementsByClassName("create-page-header")
     if (historyNode.length > 0) {
       const node = historyNode[0] as HTMLElement
