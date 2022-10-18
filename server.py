@@ -131,6 +131,7 @@ def send_image_to_email(image_url: str, email: str):
         Disposition("attachment"),
     )
     message.attachment = attachedFile
+    response = None
     try:
         response = sg.send(message)
         code, body, headers = response.status_code, response.body, response.headers
@@ -140,7 +141,7 @@ def send_image_to_email(image_url: str, email: str):
         print("Email send data has been sent as an attachment")
     except Exception as e:
         print("Error: {0}".format(e))
-    return str(response.status_code)
+    print(response)
 
 
 class PrintRequest(BaseModel):
@@ -283,12 +284,12 @@ def do_print(image_urls: List[str], mark_printed: bool = True):
     # Slots are where the stickers are on the sheet. Slot coordinates are the upper left corner. They are in the list in the following order:
     # Top left, top right, middle left, middle right, bottom left, bottom right
     slots = [
-        (164, 160),
-        (1470, 160),
-        (164, 1200),
-        (1470, 1200),
-        (160, 2240),
-        (1466, 2240),
+        (135, 130),
+        (1460, 130),
+        (142, 1185),
+        (1461, 1185),
+        (135, 2235),
+        (1463, 2235),
     ]
 
     # Coordinates of where the Continual logo should be placed
@@ -309,7 +310,7 @@ def do_print(image_urls: List[str], mark_printed: bool = True):
 
         img.paste(branding, branding_pos, mask=branding)
 
-        img.thumbnail((912, 912), Image.ANTIALIAS)
+        img.thumbnail((942, 942), Image.ANTIALIAS)
 
         # Paste Dalle2 image onto canvas
         canvas.paste(img, slots[idx])
@@ -331,7 +332,9 @@ def do_print(image_urls: List[str], mark_printed: bool = True):
     # os.startfile(filename, "print")
     print("Submitting job to printer ...")
     try:
-        os.system(f"lp -o fit-to-page -o scale=100 -o sides=one-sided {filename}")
+        os.system(
+            f"lp -o fit-to-page -o scale=100 -o sides=one-sided -o quality=best {filename}"
+        )
     except Exception as e:
         print("Error while  printing:", e)
         traceback.print_exc()
@@ -361,10 +364,23 @@ def do_print(image_urls: List[str], mark_printed: bool = True):
 @app.post("/testprinter")
 def testprint():
     try:
+        # images = [
+        #     "https://cdn.openai.com/labs/images/A photo of a white fur monster standing in a purple room.webp?v=1",
+        #     "https://cdn.openai.com/labs/images/A 3D render of an astronaut walking in a green desert.webp?v=1",
+        #     "https://cdn.openai.com/labs/images/A cartoon of a monkey in space.webp?v=1",
+        #     "https://cdn.openai.com/labs/images/A blue orange sliced in half laying on a blue floor in front of a blue wall.webp?v=1",
+        #     "https://cdn.openai.com/labs/images/An expressive oil painting of a basketball player dunking, depicted as an explosion of a nebula.webp?v=1",
+        #     "https://cdn.openai.com/labs/images/A photo of a Samoyed dog with its tongue out hugging a white Siamese cat.webp?v=1",
+        # ]
         images = [
-            "https://cdn.openai.com/labs/images/A photo of a white fur monster standing in a purple room.webp?v=1"
+            "https://cdn.openai.com/labs/images/A Shiba Inu dog wearing a beret and black turtleneck.webp?v=1",
+            "https://cdn.openai.com/labs/images/A comic book cover of a superhero wearing headphones.webp?v=1",
+            "https://cdn.openai.com/labs/images/A cat riding a motorcycle.webp?v=1",
+            "https://cdn.openai.com/labs/images/A photograph of a sunflower with sunglasses on in the middle of the flower in a field on a bright sunny day.webp?v=1",
+            "https://cdn.openai.com/labs/images/A handpalm with a tree growing on top of it.webp?v=1",
+            "https://cdn.openai.com/labs/images/An oil pastel drawing of an annoyed cat in a spaceship.webp?v=1",
         ]
-        images = images + [images[0]] * (BATCH_SIZE - len(images))
+        # images = images + [images[0]] * (BATCH_SIZE - len(images))
         do_print(images, mark_printed=False)
     except Exception as e:
         print("Error while printing:", e)
