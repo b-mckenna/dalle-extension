@@ -119,6 +119,7 @@ def send_image_to_email(image_url: str, email: str):
             <p>Thanks for coming by the Continual booth at dbt Coalesce 2022!</p>
             <p>We've attached your generated image to this email. Enjoy!</p>
             <p>Feel like sharing? <a href="{tweet_link}" target="_blank">Click</a> to Tweet your creation!</p>
+            <p>Note: you will need to download your image and attach it to your tweet.</p>
             <span>Best,</span>
             <p>the Continual team</p>
             """
